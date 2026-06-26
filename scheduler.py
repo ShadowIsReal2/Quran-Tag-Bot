@@ -379,7 +379,7 @@ async def reminder_job(context) -> None:
     bot: Bot = app.bot
 
     # Which reminder index is this (0-based, derived from job name set at registration)
-    reminder_idx: int = getattr(context.job, "_reminder_idx", 0)
+    reminder_idx: int = (context.job.data or {}).get("reminder_idx", 0)
 
     for group_row in await db.get_all_active_groups():
         group_id: int = group_row["group_id"]
@@ -511,9 +511,8 @@ def register_jobs(app: Application) -> None:
                 reminder_job,
                 time=_local_time(r_h, r_m, tz),
                 name=job_name,
+                data={"reminder_idx": idx},
             )
-            # Attach the index so reminder_job knows which template to use
-            job.job._reminder_idx = idx  # type: ignore[attr-defined]
             logger.info(
                 "Scheduled reminder[%d] at %s %s", idx, time_str, settings.timezone_str
             )
