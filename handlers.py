@@ -943,16 +943,18 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 parse_mode=MD,
             )
             dm_ok = True
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Check-in DM failed for user %d: %s", user.id, exc)
 
         if dm_ok:
             await query.answer(msg.CHECKIN_TOAST_NEW, show_alert=False)
         else:
-            logger.info("Check-in DM failed for user %d — showing popup", user.id)
             bot_user = await context.bot.get_me()
             link = f"https://t.me/{bot_user.username}"
-            await query.answer(f"⚠️ ابدأ المحادثة مع البوت لترى إحصائياتك:\n{link}", show_alert=True)
+            await query.answer(
+                f"⚠️ ابدأ المحادثة مع البوت أولاً لتصلك الإحصائيات:\n{link}",
+                show_alert=True,
+            )
 
         # Evaluate achievements and milestones
         plan_key = group_settings["plan_key"] if group_settings else "1_juz_day"
@@ -962,12 +964,18 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         except (IndexError, KeyError):
             announce = settings.announce_badges
 
-        await evaluate_user_achievements(
-            context.bot, db, user.id, chat.id, announce_badges=announce
-        )
-        await evaluate_group_milestones(
-            context.bot, db, chat.id, plan_key=plan_key
-        )
+        try:
+            await evaluate_user_achievements(
+                context.bot, db, user.id, chat.id, announce_badges=announce
+            )
+        except Exception as exc:
+            logger.error("evaluate_user_achievements crashed: %s", exc)
+        try:
+            await evaluate_group_milestones(
+                context.bot, db, chat.id, plan_key=plan_key
+            )
+        except Exception as exc:
+            logger.error("evaluate_group_milestones crashed: %s", exc)
 
     # ── My stats button ───────────────────────────────────────────────────
     elif data == CB_MY_STATS:
