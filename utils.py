@@ -177,12 +177,6 @@ def pick_daily_dua() -> str:
 # ---------------------------------------------------------------------------
 
 
-def make_progress_bar(percentage: int, length: int = 10) -> str:
-    """Return a visual progress bar (e.g. 🟩🟩🟩⬜⬜)."""
-    filled = int((percentage / 100.0) * length)
-    filled = max(0, min(length, filled))
-    empty = length - filled
-    return "🟩" * filled + "⬜" * empty
 def compute_completion_pct(completed: int, total: int) -> int:
     """Return integer completion percentage; 0 if total is 0."""
     if total == 0:
@@ -234,7 +228,6 @@ def build_stats_text(
     month_days: int,
     this_year: int,
     total: int,
-    completion_pct: int,
     total_juz: int,
     total_pages: int,
     avg_per_week: float,
@@ -254,12 +247,10 @@ def build_stats_text(
         days_in_month=month_days,
         this_year=this_year,
         total=total,
-        completion_pct=completion_pct,
         total_juz=total_juz,
         total_pages=total_pages,
         avg_per_week=avg_per_week,
         best_month=best_month_str,
-        progress_bar=make_progress_bar(completion_pct),
     )
     badge = get_streak_badge(current_streak)
     if badge:

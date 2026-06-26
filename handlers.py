@@ -302,7 +302,6 @@ async def cmd_me(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     this_year      = await db.count_checkins_this_year(user.id, target_group, today.year)
     total          = await db.count_checkins_total(user.id, target_group)
     m_days         = days_in_month(today.year, today.month)
-    completion_pct = compute_completion_pct(this_month, m_days)
 
     # Extended stats
     total_juz   = estimate_juz_from_checkins(total, plan_key)
@@ -335,7 +334,6 @@ async def cmd_me(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         month_days=m_days,
         this_year=this_year,
         total=total,
-        completion_pct=completion_pct,
         total_juz=total_juz,
         total_pages=total_pages,
         avg_per_week=avg_per_week,
