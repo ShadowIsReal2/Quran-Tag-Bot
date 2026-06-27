@@ -175,12 +175,18 @@ def admin_backup_menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 CB_ADMIN_SELECT_GROUP = "admin_sg:"
+CB_ADMIN_SELECT_GROUP_ONLY = "admin_sgo:"
 
-def admin_groups_keyboard(groups_data: list[tuple[int, str]]) -> InlineKeyboardMarkup:
-    """Keyboard listing groups an admin manages."""
+def admin_groups_keyboard(groups_data: list[tuple[int, str]], go_to_settings: bool = True) -> InlineKeyboardMarkup:
+    """Keyboard listing groups an admin manages.
+
+    If *go_to_settings* is True (default), selecting a group opens its settings.
+    Otherwise it just stores the selection for later use.
+    """
+    prefix = CB_ADMIN_SELECT_GROUP if go_to_settings else CB_ADMIN_SELECT_GROUP_ONLY
     keyboard = []
     for group_id, title in groups_data:
-        keyboard.append([InlineKeyboardButton(title, callback_data=f"{CB_ADMIN_SELECT_GROUP}{group_id}")])
+        keyboard.append([InlineKeyboardButton(title, callback_data=f"{prefix}{group_id}")])
     keyboard.append([InlineKeyboardButton("❌ إغلاق", callback_data=CB_CANCEL)])
     return InlineKeyboardMarkup(keyboard)
 

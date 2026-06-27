@@ -27,6 +27,7 @@ from handlers import (
     cmd_checkin,
     cmd_daily,
     cmd_export,
+    cmd_group,
     cmd_help,
     cmd_leaderboard,
     cmd_me,
@@ -106,6 +107,7 @@ BOT_COMMANDS = [
     BotCommand("report",       "تقرير اليوم"),
     BotCommand("missing",      "من لم يُكمل الورد (مشرفون)"),
     BotCommand("settings",     "إعدادات المجموعة (مشرفون)"),
+    BotCommand("group",        "اختيار المجموعة (مشرفون)"),
     BotCommand("readingplan",  "تغيير خطة القراءة (مشرفون)"),
     BotCommand("backup",       "نسخة احتياطية (مشرفون)"),
     BotCommand("restore",      "استعادة نسخة (مشرفون)"),
@@ -151,6 +153,7 @@ def register_handlers(app: Application) -> None:
     app.add_handler(CommandHandler("report",       cmd_report))
     app.add_handler(CommandHandler("missing",      cmd_missing))
     app.add_handler(CommandHandler("settings",     cmd_settings))
+    app.add_handler(CommandHandler("group",        cmd_group))
     app.add_handler(CommandHandler("readingplan",  cmd_readingplan))
     app.add_handler(CommandHandler("backup",       cmd_backup))
     app.add_handler(CommandHandler("restore",      cmd_restore))

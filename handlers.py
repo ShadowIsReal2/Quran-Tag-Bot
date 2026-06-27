@@ -48,6 +48,7 @@ from keyboards import (
     CB_SET_TIMEZONE,
     CB_SETTINGS_MENU,
     CB_ADMIN_SELECT_GROUP,
+    CB_ADMIN_SELECT_GROUP_ONLY,
     CB_SKIP_DAY,
     CB_RESET_MONTH,
     CB_MENU_HELP,
@@ -635,6 +636,46 @@ async def cmd_settings(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 # ---------------------------------------------------------------------------
+# /group  — choose which group to manage
+# ---------------------------------------------------------------------------
+
+async def cmd_group(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Choose which group to manage (stores selection for menu commands)."""
+    if _is_group(update):
+        bot_username = (await context.bot.get_me()).username
+        dm_link = f"https://t.me/{bot_username}?start=group"
+        await _send_safe(update, f"⚠️ استخدم هذا الأمر في المحادثة الخاصة:\n{dm_link}", parse_mode=MD)
+        await _delete_cmd(update, context)
+        return
+
+    db = _db(context)
+    user_id = update.effective_user.id
+    active_groups = await db.get_all_active_groups()
+    admin_groups = []
+
+    temp_msg = await update.effective_message.reply_text("⏳ جاري البحث عن مجموعاتك...")
+    for row in active_groups:
+        g_id = row["group_id"]
+        title = row["title"]
+        try:
+            member = await context.bot.get_chat_member(g_id, user_id)
+            if member.status in ("administrator", "creator"):
+                admin_groups.append((g_id, title))
+        except Exception:
+            pass
+    await temp_msg.delete()
+
+    if not admin_groups:
+        await _send_safe(update, "⚠️ لم يتم العثور على أي مجموعات تشرف عليها.", parse_mode=MD)
+        return
+
+    from keyboards import admin_groups_keyboard
+    text = "📋 *اختر المجموعة*\n\nاختر المجموعة التي تود إدارتها:"
+    reply_markup = admin_groups_keyboard(admin_groups, go_to_settings=False)
+    await _send_safe(update, text, parse_mode=MD, reply_markup=reply_markup)
+
+
+# ---------------------------------------------------------------------------
 # /readingplan  — admin only
 # ---------------------------------------------------------------------------
 
@@ -952,6 +993,17 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await show_group_settings(update, context, group_id)
         return
 
+    if data.startswith(CB_ADMIN_SELECT_GROUP_ONLY):
+        group_id = int(data.split(":")[1])
+        context.user_data["admin_group_id"] = group_id
+        await query.answer()
+        await query.message.edit_text(
+            f"✅ تم تحديد المجموعة. يمكنك الآن استخدام القائمة الرئيسية.\n\n"
+            f"لعرض الإعدادات اضغط على زر ⚙️ الإعدادات في القائمة.",
+            parse_mode=MD,
+        )
+        return
+
     # ── Check-in button ───────────────────────────────────────────────────
     if data == CB_CHECKIN:
         if not _is_group(update):
@@ -1044,7 +1096,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             await query.answer(msg.ADMIN_ONLY, show_alert=True)
             return
         await query.answer()
-        if not target_group_id or target_group_id == chat.id and chat.type == "private":
+        if not target_group_id:
             await cmd_settings(update, context)
         else:
             await show_group_settings(update, context, target_group_id)
