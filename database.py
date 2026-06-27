@@ -81,6 +81,11 @@ CREATE TABLE IF NOT EXISTS settings (
     reminder_times      TEXT    NOT NULL DEFAULT '20:00',
     report_enabled      INTEGER NOT NULL DEFAULT 1,
     announce_badges     INTEGER NOT NULL DEFAULT 0,
+    milestones_enabled  INTEGER NOT NULL DEFAULT 1,
+    weekly_report_enabled INTEGER NOT NULL DEFAULT 1,
+    daily_verse_enabled   INTEGER NOT NULL DEFAULT 1,
+    daily_hadith_enabled  INTEGER NOT NULL DEFAULT 0,
+    daily_dua_enabled     INTEGER NOT NULL DEFAULT 0,
     reading_start       TEXT    NOT NULL DEFAULT '',
     FOREIGN KEY (group_id) REFERENCES groups(group_id) ON DELETE CASCADE
 );"""
@@ -164,6 +169,11 @@ _MIGRATIONS = [
     "ALTER TABLE settings ADD COLUMN announce_badges INTEGER NOT NULL DEFAULT 1;",
     "ALTER TABLE settings ADD COLUMN reading_start TEXT NOT NULL DEFAULT '';",
     "ALTER TABLE settings ADD COLUMN report_enabled INTEGER NOT NULL DEFAULT 1;",
+    "ALTER TABLE settings ADD COLUMN milestones_enabled INTEGER NOT NULL DEFAULT 1;",
+    "ALTER TABLE settings ADD COLUMN weekly_report_enabled INTEGER NOT NULL DEFAULT 1;",
+    "ALTER TABLE settings ADD COLUMN daily_verse_enabled INTEGER NOT NULL DEFAULT 1;",
+    "ALTER TABLE settings ADD COLUMN daily_hadith_enabled INTEGER NOT NULL DEFAULT 0;",
+    "ALTER TABLE settings ADD COLUMN daily_dua_enabled INTEGER NOT NULL DEFAULT 0;",
 ]
 
 # Default reading plans seed data
@@ -686,8 +696,10 @@ class Database:
         """Update a single setting column for a group."""
         allowed = {
             "post_time", "report_time", "timezone", "plan_key",
-            "custom_reading", "reminder_enabled", "reminder_times", "announce_badges",
-            "reading_start", "report_enabled",
+            "custom_reading", "reminder_enabled", "reminder_times",
+            "announce_badges", "reading_start", "report_enabled",
+            "milestones_enabled", "weekly_report_enabled",
+            "daily_verse_enabled", "daily_hadith_enabled", "daily_dua_enabled",
         }
         if key not in allowed:
             raise ValueError(f"Unknown setting key: {key!r}")

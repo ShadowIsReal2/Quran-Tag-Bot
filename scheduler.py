@@ -133,13 +133,16 @@ async def daily_post_job(context) -> None:
             + msg.DAILY_POST_BODY.format(date=date_str, reading=reading, motivation=motivation)
         )
 
-        if settings.enable_random_verses or settings.include_daily_verse:
+        def _gs(key: str, default: int) -> bool:
+            return bool(int(group_settings.get(key, default))) if group_settings else bool(default)
+
+        if _gs("daily_verse_enabled", 1 if (settings.enable_random_verses or settings.include_daily_verse) else 0):
             text += msg.DAILY_POST_WITH_VERSE.format(verse=pick_random_verse())
 
-        if settings.enable_random_dua or settings.include_daily_dua:
+        if _gs("daily_dua_enabled", 1 if (settings.enable_random_dua or settings.include_daily_dua) else 0):
             text += msg.DAILY_POST_WITH_DUA.format(dua=pick_daily_dua())
 
-        if settings.enable_random_hadith or settings.include_daily_hadith:
+        if _gs("daily_hadith_enabled", 1 if (settings.enable_random_hadith or settings.include_daily_hadith) else 0):
             text += msg.DAILY_POST_WITH_HADITH.format(hadith=pick_random_hadith())
 
         ok = await _send_safe(
@@ -241,6 +244,9 @@ async def weekly_report_job(context) -> None:
 
     for group_row in await db.get_all_active_groups():
         group_id: int = group_row["group_id"]
+        group_settings = await db.get_settings(group_id)
+        if group_settings and not bool(int(group_settings.get("weekly_report_enabled", 1))):
+            continue
 
         # Current week data
         curr_rows = await db.get_weekly_report_data(group_id, from_date, to_date)

@@ -214,6 +214,10 @@ async def evaluate_group_milestones(
     if not settings.enable_milestones:
         return []
 
+    group_settings = await db.get_settings(group_id)
+    if group_settings is not None and not bool(int(group_settings.get("milestones_enabled", 1))):
+        return []
+
     newly_reached: list[str] = []
 
     total_checkins = await db.count_group_checkins_total(group_id)

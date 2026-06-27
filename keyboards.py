@@ -25,6 +25,13 @@ CB_SET_REPORT_TIME = "set_report_time"
 CB_SET_TIMEZONE = "set_timezone"
 CB_SET_PLAN = "set_plan"
 CB_TOGGLE_REPORT = "toggle_report"
+CB_TOGGLE_MILESTONES = "toggle_milestones"
+CB_TOGGLE_WEEKLY = "toggle_weekly"
+CB_TOGGLE_VERSE = "toggle_verse"
+CB_TOGGLE_HADITH = "toggle_hadith"
+CB_TOGGLE_DUA = "toggle_dua"
+CB_TOGGLE_REMINDER = "toggle_reminder"
+CB_TOGGLE_ANNOUNCE = "toggle_announce"
 CB_FORCE_DAILY = "force_daily"
 CB_SKIP_DAY = "skip_day"
 CB_RESET_MONTH = "reset_month"
@@ -81,15 +88,35 @@ def stats_keyboard() -> InlineKeyboardMarkup:
     ])
 
 
-def settings_main_keyboard(is_supergroup: bool = True, report_enabled: bool = True) -> InlineKeyboardMarkup:
+def settings_main_keyboard(
+    is_supergroup: bool = True,
+    report_enabled: bool = True,
+    milestones_enabled: bool = True,
+    weekly_report_enabled: bool = True,
+    daily_verse_enabled: bool = True,
+    daily_hadith_enabled: bool = False,
+    daily_dua_enabled: bool = False,
+    reminder_enabled: bool = False,
+    announce_badges: bool = False,
+) -> InlineKeyboardMarkup:
     """Main settings menu keyboard for admins."""
-    report_label = f"{msg.BTN_TOGGLE_REPORT}: {'🟢' if report_enabled else '🔴'}"
+
+    def _btn(label: str, cb: str, enabled: bool) -> InlineKeyboardButton:
+        return InlineKeyboardButton(f"{label}: {'🟢' if enabled else '🔴'}", callback_data=cb)
+
     rows = [
         [InlineKeyboardButton(msg.BTN_SET_POST_TIME, callback_data=CB_SET_POST_TIME)],
         [InlineKeyboardButton(msg.BTN_SET_REPORT_TIME, callback_data=CB_SET_REPORT_TIME)],
         [InlineKeyboardButton(msg.BTN_SET_TIMEZONE, callback_data=CB_SET_TIMEZONE)],
         [InlineKeyboardButton(msg.BTN_READING_PLAN, callback_data=CB_SET_PLAN)],
-        [InlineKeyboardButton(report_label, callback_data=CB_TOGGLE_REPORT)],
+        [_btn(msg.BTN_TOGGLE_REPORT, CB_TOGGLE_REPORT, report_enabled)],
+        [_btn(msg.BTN_TOGGLE_MILESTONES, CB_TOGGLE_MILESTONES, milestones_enabled)],
+        [_btn(msg.BTN_TOGGLE_WEEKLY, CB_TOGGLE_WEEKLY, weekly_report_enabled)],
+        [_btn(msg.BTN_TOGGLE_VERSE, CB_TOGGLE_VERSE, daily_verse_enabled)],
+        [_btn(msg.BTN_TOGGLE_HADITH, CB_TOGGLE_HADITH, daily_hadith_enabled)],
+        [_btn(msg.BTN_TOGGLE_DUA, CB_TOGGLE_DUA, daily_dua_enabled)],
+        [_btn(msg.BTN_TOGGLE_REMINDER, CB_TOGGLE_REMINDER, reminder_enabled)],
+        [_btn(msg.BTN_TOGGLE_ANNOUNCE, CB_TOGGLE_ANNOUNCE, announce_badges)],
         [InlineKeyboardButton(msg.BTN_FORCE_DAILY, callback_data=CB_FORCE_DAILY)],
         [InlineKeyboardButton(msg.BTN_SKIP_DAY, callback_data=CB_SKIP_DAY)],
         [InlineKeyboardButton(msg.BTN_RESET_MONTH, callback_data=CB_RESET_MONTH)],

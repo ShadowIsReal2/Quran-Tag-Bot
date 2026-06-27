@@ -29,6 +29,13 @@ from keyboards import (
     CB_CONFIRM_RESET,
     CB_FORCE_DAILY,
     CB_TOGGLE_REPORT,
+    CB_TOGGLE_MILESTONES,
+    CB_TOGGLE_WEEKLY,
+    CB_TOGGLE_VERSE,
+    CB_TOGGLE_HADITH,
+    CB_TOGGLE_DUA,
+    CB_TOGGLE_REMINDER,
+    CB_TOGGLE_ANNOUNCE,
     CB_GROUP_STATS,
     CB_MY_STATS,
     CB_PLAN_PREFIX,
@@ -432,11 +439,14 @@ async def cmd_daily(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         + msg.DAILY_POST_BODY.format(date=date_str, reading=reading, motivation=motivation)
     )
 
-    if settings.enable_random_verses or settings.include_daily_verse:
+    def _gs(key: str, default: int) -> bool:
+        return bool(int(group_settings.get(key, default))) if group_settings else bool(default)
+
+    if _gs("daily_verse_enabled", 1 if (settings.enable_random_verses or settings.include_daily_verse) else 0):
         text += msg.DAILY_POST_WITH_VERSE.format(verse=pick_random_verse())
-    if settings.enable_random_dua or settings.include_daily_dua:
+    if _gs("daily_dua_enabled", 1 if (settings.enable_random_dua or settings.include_daily_dua) else 0):
         text += msg.DAILY_POST_WITH_DUA.format(dua=pick_daily_dua())
-    if settings.enable_random_hadith or settings.include_daily_hadith:
+    if _gs("daily_hadith_enabled", 1 if (settings.enable_random_hadith or settings.include_daily_hadith) else 0):
         text += msg.DAILY_POST_WITH_HADITH.format(hadith=pick_random_hadith())
 
     await context.bot.send_message(
@@ -521,7 +531,18 @@ async def show_group_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
             group_title = g["title"]
             break
 
-    report_enabled = bool(group_settings.get("report_enabled", 1))
+    def _gs(key: str, default: int = 1) -> bool:
+        return bool(int(group_settings.get(key, default))) if group_settings else bool(default)
+
+    report_enabled       = _gs("report_enabled")
+    milestones_enabled   = _gs("milestones_enabled")
+    weekly_report_enabled = _gs("weekly_report_enabled")
+    daily_verse_enabled   = _gs("daily_verse_enabled")
+    daily_hadith_enabled  = _gs("daily_hadith_enabled", 0)
+    daily_dua_enabled     = _gs("daily_dua_enabled", 0)
+    reminder_enabled      = _gs("reminder_enabled", 0)
+    announce_badges       = _gs("announce_badges", 0)
+
     text = f"⚙️ *إعدادات: {escape_markdown(group_title)}*\n\n" + msg.SETTINGS_BODY.format(
         post_time=group_settings["post_time"],
         report_time=group_settings["report_time"],
@@ -529,7 +550,16 @@ async def show_group_settings(update: Update, context: ContextTypes.DEFAULT_TYPE
         plan_name=plan_name,
     )
 
-    kb = settings_main_keyboard(report_enabled=report_enabled)
+    kb = settings_main_keyboard(
+        report_enabled=report_enabled,
+        milestones_enabled=milestones_enabled,
+        weekly_report_enabled=weekly_report_enabled,
+        daily_verse_enabled=daily_verse_enabled,
+        daily_hadith_enabled=daily_hadith_enabled,
+        daily_dua_enabled=daily_dua_enabled,
+        reminder_enabled=reminder_enabled,
+        announce_badges=announce_badges,
+    )
     if update.callback_query:
         await update.callback_query.message.edit_text(text, parse_mode=MD, reply_markup=kb)
     else:
@@ -1072,13 +1102,27 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 parse_mode=MD,
             )
 
-    elif data == CB_TOGGLE_REPORT:
+    elif data in (
+        CB_TOGGLE_REPORT, CB_TOGGLE_MILESTONES, CB_TOGGLE_WEEKLY,
+        CB_TOGGLE_VERSE, CB_TOGGLE_HADITH, CB_TOGGLE_DUA,
+        CB_TOGGLE_REMINDER, CB_TOGGLE_ANNOUNCE,
+    ):
         if not await _verify_admin():
             await query.answer(msg.ADMIN_ONLY, show_alert=True)
             return
-        current = bool(group_settings.get("report_enabled", 1)) if group_settings else True
-        new_val = "0" if current else "1"
-        await db.update_setting(target_group_id, "report_enabled", new_val)
+        col = {
+            CB_TOGGLE_REPORT:    "report_enabled",
+            CB_TOGGLE_MILESTONES: "milestones_enabled",
+            CB_TOGGLE_WEEKLY:    "weekly_report_enabled",
+            CB_TOGGLE_VERSE:     "daily_verse_enabled",
+            CB_TOGGLE_HADITH:    "daily_hadith_enabled",
+            CB_TOGGLE_DUA:       "daily_dua_enabled",
+            CB_TOGGLE_REMINDER:  "reminder_enabled",
+            CB_TOGGLE_ANNOUNCE:  "announce_badges",
+        }[data]
+        default = 0 if col in ("reminder_enabled", "announce_badges") else 1
+        current = bool(int(group_settings.get(col, default))) if group_settings else bool(default)
+        await db.update_setting(target_group_id, col, "0" if current else "1")
         await query.answer()
         await show_group_settings(update, context, target_group_id)
 
@@ -1109,11 +1153,14 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             + msg.DAILY_POST_BODY.format(date=date_str, reading=reading, motivation=motivation)
         )
 
-        if settings.enable_random_verses or settings.include_daily_verse:
+        def _gs(key: str, default: int) -> bool:
+            return bool(int(group_settings.get(key, default))) if group_settings else bool(default)
+
+        if _gs("daily_verse_enabled", 1 if (settings.enable_random_verses or settings.include_daily_verse) else 0):
             text += msg.DAILY_POST_WITH_VERSE.format(verse=pick_random_verse())
-        if settings.enable_random_dua or settings.include_daily_dua:
+        if _gs("daily_dua_enabled", 1 if (settings.enable_random_dua or settings.include_daily_dua) else 0):
             text += msg.DAILY_POST_WITH_DUA.format(dua=pick_daily_dua())
-        if settings.enable_random_hadith or settings.include_daily_hadith:
+        if _gs("daily_hadith_enabled", 1 if (settings.enable_random_hadith or settings.include_daily_hadith) else 0):
             text += msg.DAILY_POST_WITH_HADITH.format(hadith=pick_random_hadith())
 
         await context.bot.send_message(
